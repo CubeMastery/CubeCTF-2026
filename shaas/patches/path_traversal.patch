@@ -1,0 +1,47 @@
+diff --git a/service/main.py b/service/main.py
+index ee5c688..24c5658 100644
+--- a/service/main.py
++++ b/service/main.py
+@@ -234,16 +234,19 @@ def handle_client(conn, addr):
+                     fn = parts[1]
+                     content = " ".join(parts[2:])
+                     user_home = f"{CHROOT_BASE}/{username}/home/{username}"
+-                    file_path = os.path.join(user_home, fn)
+-                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+-                    with open(file_path, "w") as f:
+-                        f.write(content)
+-                    try:
+-                        pw_entry = pwd.getpwnam(username)
+-                        os.chown(file_path, pw_entry.pw_uid, pw_entry.pw_gid)
+-                    except KeyError:
+-                        pass
+-                    r = "OK"
++                    file_path = os.path.normpath(os.path.join(user_home, fn))
++                    if not file_path.startswith(user_home):
++                        r = "ERROR: invalid filename"
++                    else:
++                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
++                        with open(file_path, "w") as f:
++                            f.write(content)
++                        try:
++                            pw_entry = pwd.getpwnam(username)
++                            os.chown(file_path, pw_entry.pw_uid, pw_entry.pw_gid)
++                        except KeyError:
++                            pass
++                        r = "OK"
+ 
+             elif cmd == "read":
+                 if len(parts) < 2:
+@@ -251,8 +254,10 @@ def handle_client(conn, addr):
+                 else:
+                     fn = parts[1]
+                     user_home = f"{CHROOT_BASE}/{username}/home/{username}"
+-                    file_path = os.path.join(user_home, fn)
+-                    if not os.path.exists(file_path) or not os.path.isfile(file_path):
++                    file_path = os.path.normpath(os.path.join(user_home, fn))
++                    if not file_path.startswith(user_home):
++                        r = "ERROR: invalid filename"
++                    elif not os.path.exists(file_path) or not os.path.isfile(file_path):
+                         r = "ERROR: file not found"
+                     else:
+                         with open(file_path, "r") as f:

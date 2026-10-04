@@ -1,0 +1,14 @@
+diff --git a/service/main.py b/service/main.py
+--- a/service/main.py
++++ b/service/main.py
+@@ -19,7 +19,9 @@ def read_item(item_id: str, token: str):
+         return {"item": ""}
+
+ @app.post("/items/{item_id}/{item}")
+-def create_item(item_id: str, item: str, token: str = str(random.randint(10000000, 99999999))):
++def create_item(item_id: str, item: str, token: str = ""):
++    if token == "":
++        token = str(random.randint(10000000, 99999999))
+     if item_id in items:
+         return {"already": "exists"}
+     items[item_id] = {token: item}

@@ -1,0 +1,36 @@
+diff --git a/src/main.cpp b/src/main.cpp
+index ba319cf..96d396b 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -374,7 +347,8 @@ static std::string handle(Session &sess, const std::string &line) {
+     if (cmd == "CAL_DISCARD") {
+         log_action(sess.user, cmd);
+         if (!sess.cal) return "ERR cal";
+-        sess.cal->quality = -1;
++        delete sess.cal;
++        sess.cal = nullptr;
+         return "OK discarded";
+     }
+ 
+@@ -384,10 +358,8 @@ static std::string handle(Session &sess, const std::string &line) {
+         Calibration *tmp = new Calibration();
+         std::memset(tmp, 0, sizeof(Calibration));
+         std::strncpy(tmp->owner, args[1].c_str(), sizeof(tmp->owner) - 1);
+-        std::string body = first_note_for(args[1]);
+-        std::strncpy(tmp->preview, body.c_str(), sizeof(tmp->preview) - 1);
++        std::strncpy(tmp->preview, "cached alignment envelope", sizeof(tmp->preview) - 1);
+         tmp->quality = static_cast<int>(fnv1a(args[1]) % 10);
+-        if (sess.cal) std::memcpy(sess.cal, tmp, sizeof(Calibration));
+         delete tmp;
+         return "OK prefetched";
+     }
+@@ -399,7 +371,7 @@ static std::string handle(Session &sess, const std::string &line) {
+         std::string memo = sess.cal->preview;
+         run_stmt("INSERT INTO calibrations(owner,scope,memo,quality) VALUES(?,?,?,?)",
+                  {owner, sess.cal->scope, memo, std::to_string(sess.cal->quality)});
+-        if (owner == sess.user) delete sess.cal;
++        delete sess.cal;
+         sess.cal = nullptr;
+         return memo.empty() ? "OK committed" : "OK committed " + escape_field(memo);
+     }
+

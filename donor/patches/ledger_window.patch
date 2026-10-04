@@ -1,0 +1,30 @@
+diff --git a/service/src/handlers/ledger.js b/service/src/handlers/ledger.js
+index a983528..b8396bb 100644
+--- a/service/src/handlers/ledger.js
++++ b/service/src/handlers/ledger.js
+@@ -16,17 +16,18 @@ export function receiptView({ params, req }) {
+   return errorResponse(404, 'missing receipt');
+ }
+ 
+-export function ledgerWindow({ query }) {
++export function ledgerWindow({ query, req }) {
+   const org = clean(query.has('org') ? query.get('org') : '');
+-  const requestedLane = query.has('lane') ? query.get('lane') : '';
+-  const lane = requestedLane === '' ? '' : clean(requestedLane);
+-  const digest = query.has('digest') ? query.get('digest') : '';
+-  if (fold(`${org}:${lane}`) !== digest) {
+-    return errorResponse(403, 'window closed');
++  const username = sessionUser(req);
++  if (username === null) {
++    return errorResponse(401, 'login required');
++  }
++  if (!isAdmin(org, username)) {
++    return errorResponse(403, 'org admin required');
+   }
+   const entries = donationsWhere((d) => {
+     const campaign = state.campaigns.get(d.campaign);
+-    return campaign ? campaign.org === org || campaign.lane === lane : false;
++    return campaign ? campaign.org === org : false;
+   });
+   return jsonResponse(200, { entries });
+ }

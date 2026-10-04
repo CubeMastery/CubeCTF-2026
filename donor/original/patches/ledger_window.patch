@@ -1,0 +1,23 @@
+diff --git a/service/src/main.rs b/service/src/main.rs
+--- a/service/src/main.rs
++++ b/service/src/main.rs
+@@ -457,13 +457,14 @@ fn receipt_view(req: Request, receipt: &str, state: Arc<Mutex<AppState>>) -> Res
+ fn ledger_window(req: Request, state: Arc<Mutex<AppState>>) -> Response {
+     let db = state.lock().unwrap();
+     let org = clean(req.query.get("org").map(String::as_str).unwrap_or(""));
+-    let lane = req.query.get("lane").map(|v| clean(v)).unwrap_or_default();
+-    let digest = req.query.get("digest").cloned().unwrap_or_default();
+-    if fold(&format!("{}:{}", org, lane)) != digest {
+-        return json_response(403, r#"{"error":"window closed"}"#.to_string());
++    let Some(username) = session_user(&req, &db) else {
++        return json_response(401, r#"{"error":"login required"}"#.to_string());
++    };
++    if !is_admin(&db, &org, &username) {
++        return json_response(403, r#"{"error":"org admin required"}"#.to_string());
+     }
+     let items: Vec<String> = db.donations.values()
+-        .filter(|d| db.campaigns.get(&d.campaign).is_some_and(|c| c.org == org || c.lane == lane))
++        .filter(|d| db.campaigns.get(&d.campaign).is_some_and(|c| c.org == org))
+         .map(donation_json)
+         .collect();
+     json_response(200, format!(r#"{{"entries":[{}]}}"#, items.join(",")))

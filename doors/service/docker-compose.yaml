@@ -1,0 +1,19 @@
+services:
+  doors:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4783:4783"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+          pids: 1024
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    storage_opt:
+      size: 2G

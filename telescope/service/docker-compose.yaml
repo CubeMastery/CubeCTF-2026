@@ -1,0 +1,24 @@
+services:
+  telescope:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7419:7419"
+    volumes:
+      - type: tmpfs
+        target: /data
+        tmpfs:
+          size: 1G
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+          pids: 100
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    storage_opt:
+      size: 1G

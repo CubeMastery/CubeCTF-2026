@@ -1,0 +1,4 @@
+service:
+  name: vegas
+  ports:
+    - 7770/tcp

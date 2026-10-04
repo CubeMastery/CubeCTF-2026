@@ -1,0 +1,29 @@
+diff --git a/service/server.lua b/service/server.lua
+--- a/service/server.lua
++++ b/service/server.lua
+@@ -379,19 +379,21 @@ local function run_script(state, raw_path, argv)
+                 local value = line:match("^%S+%s+%S+%s+(.+)$") or ""
+                 state.env[parts[2]:upper()] = expand_vars(state, value, argv)
+             elseif cmd == "TYPE" and parts[2] then
+-                if not visible_to(state, parts[2]) then
++                local src_arg = expand_vars(state, parts[2], argv)
++                if not visible_to(state, src_arg) then
+                     return false, "script read denied"
+                 end
+-                local src = real_path(state, expand_vars(state, parts[2], argv))
++                local src = real_path(state, src_arg)
+                 local data = read_file(src)
+                 if data then
+                     output[#output + 1] = data
+                 end
+             elseif cmd == "COPY" and parts[2] and parts[3] then
+-                if not visible_to(state, parts[2]) then
++                local src_arg = expand_vars(state, parts[2], argv)
++                if not visible_to(state, src_arg) then
+                     return false, "script read denied"
+                 end
+-                local src = real_path(state, expand_vars(state, parts[2], argv))
++                local src = real_path(state, src_arg)
+                 local dst_arg = expand_vars(state, parts[3], argv)
+                 if not visible_to(state, dst_arg) then
+                     return false, "script write denied"

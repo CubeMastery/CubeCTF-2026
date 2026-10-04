@@ -1,0 +1,22 @@
+diff --git a/service/src/main.rs b/service/src/main.rs
+--- a/service/src/main.rs
++++ b/service/src/main.rs
+@@ -405,7 +405,7 @@ fn routing_ticket(req: Request, state: Arc<Mutex<AppState>>) -> Response {
+     if !is_admin(&db, &org, &username) {
+         return json_response(403, r#"{"error":"org admin required"}"#.to_string());
+     }
+-    let lane = form.get("lane").map(|v| clean(v)).unwrap_or_else(|| lane_for(&org));
++    let lane = lane_for(&org);
+     let ticket = format!("{}:{}:{}", org, lane, fold(&format!("{}:{}", username, lane)));
+     json_response(200, format!(r#"{{"ticket":"{}"}}"#, ticket))
+ }
+@@ -436,6 +436,9 @@ fn routing_settle(req: Request, state: Arc<Mutex<AppState>>) -> Response {
+     if campaign_lane != pieces[1] {
+         return json_response(409, r#"{"error":"routing lane mismatch"}"#.to_string());
+     }
++    if d.org != pieces[0] {
++        return json_response(403, r#"{"error":"routing destination mismatch"}"#.to_string());
++    }
+     d.org = pieces[0].to_string();
+     d.settled = true;
+     json_response(200, format!(r#"{{"moved":"{}"}}"#, d.id))

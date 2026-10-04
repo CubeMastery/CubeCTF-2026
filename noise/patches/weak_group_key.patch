@@ -1,0 +1,13 @@
+diff --git a/service/noise/service.py b/service/noise/service.py
+index 0e995d6..3371c7a
+--- a/service/noise/service.py
++++ b/service/noise/service.py
+@@ -117,7 +117,7 @@ class NoiseService:
+ 
+     def create_group(self, token: str, name: str) -> GroupSecret:
+         owner = self._user_from_token(token)
+-        key = crypto.generate_group_keypair(GROUP_KEY_BITS)
++        key = crypto.generate_keypair(GROUP_KEY_BITS)
+         pub = crypto.pubkey_to_base64(key.public_key())
+         priv = crypto.privkey_to_base64(key)
+         group = self.db.create_group(pub, priv, name, owner.id)

@@ -1,0 +1,25 @@
+services:
+  noise:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "noise_socket_server.py"]
+    ports:
+      - "6426:6426"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+          pids: 1024
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    storage_opt:
+      size: 4G
+
+volumes:
+  noise-data:

@@ -1,0 +1,20 @@
+diff --git a/service/src/main.rs b/service/src/main.rs
+--- a/service/src/main.rs
++++ b/service/src/main.rs
+@@ -343,12 +343,11 @@ fn org_donations(req: Request, slug: &str, state: Arc<Mutex<AppState>>) -> Respo
+ 
+ fn org_archive(req: Request, slug: &str, state: Arc<Mutex<AppState>>) -> Response {
+     let db = state.lock().unwrap();
+-    let mark = req.query.get("mark").cloned().unwrap_or_default();
+-    let Some(org) = db.orgs.get(slug) else {
+-        return json_response(404, r#"{"error":"missing org"}"#.to_string());
++    let Some(username) = session_user(&req, &db) else {
++        return json_response(401, r#"{"error":"login required"}"#.to_string());
+     };
+-    if fold(&format!("{}:{}", org.slug, org.owner)) != mark {
+-        return json_response(403, r#"{"error":"archive unavailable"}"#.to_string());
++    if !is_admin(&db, slug, &username) {
++        return json_response(403, r#"{"error":"org admin required"}"#.to_string());
+     }
+     let items: Vec<String> = db.donations.values()
+         .filter(|d| d.org == slug)

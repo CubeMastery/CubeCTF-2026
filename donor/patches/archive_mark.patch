@@ -1,0 +1,26 @@
+diff --git a/service/src/handlers/org.js b/service/src/handlers/org.js
+index 40bfaf8..766458a 100644
+--- a/service/src/handlers/org.js
++++ b/service/src/handlers/org.js
+@@ -4,14 +4,17 @@ import { jsonResponse, errorResponse } from '../response.js';
+ import { sessionUser, isAdmin, donationsWhere } from '../model.js';
+ 
+ export function orgArchive({ params, query, req }) {
+-  const mark = query.has('mark') ? query.get('mark') : '';
++  const username = sessionUser(req);
++  if (username === null) {
++    return errorResponse(401, 'login required');
++  }
++  if (!isAdmin(params.slug, username)) {
++    return errorResponse(403, 'org admin required');
++  }
+   const org = state.orgs.get(params.slug);
+   if (!org) {
+     return errorResponse(404, 'missing org');
+   }
+-  if (fold(`${org.slug}:${org.owner}`) !== mark) {
+-    return errorResponse(403, 'archive unavailable');
+-  }
+   return jsonResponse(200, { archive: donationsWhere((d) => d.org === params.slug) });
+ }
+ 

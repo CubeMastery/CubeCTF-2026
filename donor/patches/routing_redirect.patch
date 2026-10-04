@@ -1,0 +1,25 @@
+diff --git a/service/src/handlers/routing.js b/service/src/handlers/routing.js
+index e8f5e22..dd350d2 100644
+--- a/service/src/handlers/routing.js
++++ b/service/src/handlers/routing.js
+@@ -13,9 +13,7 @@ export function routingTicket({ body, req }) {
+   if (!isAdmin(org, username)) {
+     return errorResponse(403, 'org admin required');
+   }
+-  const requestedLane = formField(form, 'lane');
+-  const lane = requestedLane === undefined ? '' : clean(requestedLane);
+-  const assignedLane = lane === '' ? laneFor(org) : lane;
++  const assignedLane = laneFor(org);
+   const ticket = `${org}:${assignedLane}:${fold(`${username}:${assignedLane}`)}`;
+   return jsonResponse(200, { ticket });
+ }
+@@ -44,6 +42,9 @@ export function routingSettle({ body, req }) {
+   if (campaignLane !== pieces[1]) {
+     return errorResponse(409, 'routing lane mismatch');
+   }
++  if (donation.org !== pieces[0]) {
++    return errorResponse(403, 'routing destination mismatch');
++  }
+   donation.org = pieces[0];
+   donation.settled = true;
+   return jsonResponse(200, { moved: donation.id });

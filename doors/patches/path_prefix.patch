@@ -1,0 +1,23 @@
+diff --git a/service/server.lua b/service/server.lua
+--- a/service/server.lua
++++ b/service/server.lua
+@@ -168,18 +168,7 @@ local function normalize_path(raw, cwd)
+ end
+ 
+ local function path_for_acl(raw, cwd)
+-    raw = tostring(raw or ""):gsub("\\", "/"):gsub("/+", "/")
+-    local path
+-    if raw:match("^[A-Za-z]:/") then
+-        path = "C:" .. raw:sub(3)
+-    elseif raw:match("^[A-Za-z]:") then
+-        path = "C:/" .. raw:sub(3)
+-    elseif starts_with(raw, "/") then
+-        path = "C:" .. raw
+-    else
+-        path = (cwd or "C:/") .. "/" .. raw
+-    end
+-    return path:gsub("/+$", "")
++    return normalize_path(raw, cwd)
+ end
+ 
+ local function parent_path(p)

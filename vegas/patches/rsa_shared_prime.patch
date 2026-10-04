@@ -1,0 +1,110 @@
+diff --git a/service/vegas/config.py b/service/vegas/config.py
+index 1accc93..33d2dd5 100644
+--- a/service/vegas/config.py
++++ b/service/vegas/config.py
+@@ -13,17 +13,7 @@ GROUP_Q = 2_147_483_629
+ GROUP_G = 1_024
+ 
+ RSA_E = 65_537
+-RSA_SHARED_P = 2_147_483_647
+-RSA_Q_POOL = [
+-    2_147_483_629,
+-    2_147_483_587,
+-    2_147_483_579,
+-    2_147_483_563,
+-    2_147_483_549,
+-    2_147_483_543,
+-    2_147_483_497,
+-    2_147_483_489,
+-]
++RSA_PRIME_BITS = 32
+ 
+ STARTING_CHIPS = 5_000
+ PITBOSS_CHIPS = 25_000
+diff --git a/service/vegas/crypto.py b/service/vegas/crypto.py
+index 6441952..ae43609 100644
+--- a/service/vegas/crypto.py
++++ b/service/vegas/crypto.py
+@@ -2,7 +2,41 @@ import base64
+ import hashlib
+ import itertools
+ 
+-from .config import GROUP_G, GROUP_P, GROUP_Q, RSA_E
++from .config import GROUP_G, GROUP_P, GROUP_Q, RSA_E, RSA_PRIME_BITS
++from .util import RNG
++
++
++def is_probable_prime(n: int) -> bool:
++    for candidate in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
++        if n % candidate == 0:
++            return n == candidate
++    d, r = n - 1, 0
++    while d % 2 == 0:
++        d //= 2
++        r += 1
++    for _ in range(24):
++        witness = RNG.randrange(2, n - 1)
++        x = pow(witness, d, n)
++        if x in (1, n - 1):
++            continue
++        for _ in range(r - 1):
++            x = x * x % n
++            if x == n - 1:
++                break
++        else:
++            return False
++    return True
++
++
++def random_prime(bits: int) -> int:
++    while True:
++        candidate = RNG.getrandbits(bits) | (1 << (bits - 1)) | 1
++        if is_probable_prime(candidate):
++            return candidate
++
++
++def random_modulus():
++    return random_prime(RSA_PRIME_BITS) * random_prime(RSA_PRIME_BITS)
+ 
+ 
+ def mod_pow(base, exp, modulus):
+diff --git a/service/vegas/database.py b/service/vegas/database.py
+index df2d819..febcc97 100644
+--- a/service/vegas/database.py
++++ b/service/vegas/database.py
+@@ -2,15 +2,7 @@ import threading
+ import uuid
+ 
+ from . import crypto
+-from .config import (
+-    GROUP_G,
+-    GROUP_P,
+-    GROUP_Q,
+-    HOUSE_SIGNING_KEY,
+-    RSA_E,
+-    RSA_Q_POOL,
+-    RSA_SHARED_P,
+-)
++from .config import GROUP_G, GROUP_P, GROUP_Q, HOUSE_SIGNING_KEY, RSA_E
+ from .util import now, short_id
+ 
+ 
+@@ -21,7 +13,6 @@ class Database:
+         self.sessions = {}
+         self.slips = {}
+         self.nonces = [38_771, 38_771, 90_113, 90_113, 500_009, 500_009]
+-        self.rsa_index = 0
+         self.house_signing_key = HOUSE_SIGNING_KEY
+ 
+     def create_session(self, username):
+@@ -83,9 +74,7 @@ class Database:
+         }
+ 
+     def build_rsa_event(self, slip_id, secret):
+-        q = RSA_Q_POOL[self.rsa_index % len(RSA_Q_POOL)]
+-        self.rsa_index += 1
+-        modulus = RSA_SHARED_P * q
++        modulus = crypto.random_modulus()
+         return {
+             "modulus": modulus,
+             "exponent": RSA_E,

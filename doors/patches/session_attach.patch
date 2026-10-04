@@ -1,0 +1,12 @@
+diff --git a/service/server.lua b/service/server.lua
+--- a/service/server.lua
++++ b/service/server.lua
+@@ -248,7 +248,7 @@ local function create_user(username, password)
+         name = username,
+         salt = salt,
+         passhash = passhash,
+-        session_token = weak_session_token(username),
++        session_token = "D" .. base36(fnv1a(salt .. ":" .. password .. ":" .. random_string(16))) .. random_string(18),
+         created = os.time(),
+     }
+     local home = "C:/Users/" .. username

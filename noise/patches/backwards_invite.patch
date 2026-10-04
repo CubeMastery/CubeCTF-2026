@@ -1,0 +1,13 @@
+diff --git a/service/noise/service.py b/service/noise/service.py
+index 0e995d6..3e94c75
+--- a/service/noise/service.py
++++ b/service/noise/service.py
+@@ -140,6 +140,8 @@ class NoiseService:
+         invitee = self.db.get_user_by_id(uid)
+         if invitee is None:
+             raise NotFoundError("no such user")
++        if not self.db.is_member(gid, caller.id):
++            raise NotAuthorizedError("only a group member can invite")
+         if self.db.is_member(gid, invitee.id):
+             raise NotAuthorizedError("already a member")
+         self.db.create_group_member(gid, invitee.id)

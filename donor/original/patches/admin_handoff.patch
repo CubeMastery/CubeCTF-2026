@@ -1,0 +1,40 @@
+diff --git a/service/src/main.rs b/service/src/main.rs
+--- a/service/src/main.rs
++++ b/service/src/main.rs
+@@ -50,7 +50,7 @@ struct AppState {
+     campaigns: HashMap<String, Campaign>,
+     donations: HashMap<String, Donation>,
+     sessions: HashMap<String, String>,
+-    handoffs: HashMap<String, String>,
++    handoffs: HashMap<String, (String, String)>,
+     sequence: u64,
+ }
+ 
+@@ -368,7 +368,7 @@ fn org_handoff(req: Request, slug: &str, state: Arc<Mutex<AppState>>) -> Respons
+     let stamp = now() / 60;
+     let proof = fold(&format!("{}:{}", username, stamp));
+     let token = format!("{}.{}.{}", slug, stamp, proof);
+-    db.handoffs.insert(proof.clone(), username);
++    db.handoffs.insert(proof.clone(), (slug.to_string(), username));
+     json_response(200, format!(r#"{{"handoff":"{}"}}"#, token))
+ }
+ 
+@@ -380,12 +380,15 @@ fn accept_handoff(req: Request, slug: &str, state: Arc<Mutex<AppState>>) -> Resp
+     };
+     let token = form.get("handoff").cloned().unwrap_or_default();
+     let pieces: Vec<&str> = token.split('.').collect();
+-    if pieces.len() != 3 || pieces[1].parse::<u64>().ok().filter(|s| now() / 60 <= *s + 4).is_none() {
++    if pieces.len() != 3 || pieces[0] != slug || pieces[1].parse::<u64>().ok().filter(|s| now() / 60 <= *s + 4).is_none() {
+         return json_response(403, r#"{"error":"handoff expired"}"#.to_string());
+     }
+-    if !db.handoffs.contains_key(pieces[2]) {
++    let Some((issued_org, _issuer)) = db.handoffs.remove(pieces[2]) else {
+         return json_response(403, r#"{"error":"handoff unknown"}"#.to_string());
+-    }
++    };
++    if issued_org != slug {
++        return json_response(403, r#"{"error":"handoff unknown"}"#.to_string());
++    }
+     let Some(org) = db.orgs.get_mut(slug) else {
+         return json_response(404, r#"{"error":"missing org"}"#.to_string());
+     };

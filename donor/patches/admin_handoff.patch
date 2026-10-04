@@ -1,0 +1,31 @@
+diff --git a/service/src/handlers/org.js b/service/src/handlers/org.js
+index 40bfaf8..f229994 100644
+--- a/service/src/handlers/org.js
++++ b/service/src/handlers/org.js
+@@ -25,7 +25,7 @@ export function orgHandoff({ params, req }) {
+   }
+   const stamp = now() / 60n;
+   const proof = fold(`${username}:${stamp}`);
+-  state.handoffs.set(proof, username);
++  state.handoffs.set(proof, [params.slug, username]);
+   return jsonResponse(200, { handoff: `${params.slug}.${stamp}.${proof}` });
+ }
+ 
+@@ -38,10 +38,15 @@ export function acceptHandoff({ params, body, req }) {
+   const token = formDefault(form, 'handoff', '');
+   const pieces = token.split('.');
+   const stamp = pieces.length === 3 && /^\d+$/.test(pieces[1]) ? BigInt(pieces[1]) : null;
+-  if (stamp === null || now() / 60n > stamp + 4n) {
++  if (stamp === null || pieces[0] !== params.slug || now() / 60n > stamp + 4n) {
+     return errorResponse(403, 'handoff expired');
+   }
+-  if (!state.handoffs.has(pieces[2])) {
++  const issued = state.handoffs.get(pieces[2]);
++  if (!issued) {
++    return errorResponse(403, 'handoff unknown');
++  }
++  state.handoffs.delete(pieces[2]);
++  if (issued[0] !== params.slug) {
+     return errorResponse(403, 'handoff unknown');
+   }
+   const org = state.orgs.get(params.slug);

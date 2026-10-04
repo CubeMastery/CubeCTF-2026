@@ -1,0 +1,21 @@
+diff --git a/src/main.cpp b/src/main.cpp
+index ba319cf..96d396b 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -344,6 +316,7 @@ static std::string handle(Session &sess, const std::string &line) {
+ 
+     if (cmd == "QUEUE_AUDIT") {
+         if (args.size() < 2) return "ERR job";
++        if (args[1] != sess.user) return "ERR target";
+         log_action(sess.user, cmd, "target=" + args[1]);
+         std::string id = hex64(fnv1a(sess.user + ":" + args[1] + ":" + std::to_string(g_jobs.fetch_add(1))));
+         std::string note = first_note_for(args[1]);
+@@ -355,7 +328,7 @@ static std::string handle(Session &sess, const std::string &line) {
+     if (cmd == "JOB_RESULT") {
+         if (args.size() < 2) return "ERR job";
+         log_action(sess.user, cmd, "job=" + args[1]);
+-        std::string res = scalar("SELECT result FROM jobs WHERE id=?", {args[1]});
++        std::string res = scalar("SELECT result FROM jobs WHERE id=? AND requester=?", {args[1], sess.user});
+         return res.empty() ? "ERR missing" : "OK " + res;
+     }
+ 

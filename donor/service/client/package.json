@@ -1,0 +1,17 @@
+{
+  "name": "donor-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Terminal client for the Donor donation desk HTTP API",
+  "type": "module",
+  "main": "client.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "donor": "client.js"
+  },
+  "scripts": {
+    "start": "node client.js"
+  }
+}

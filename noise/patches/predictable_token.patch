@@ -1,0 +1,25 @@
+diff --git a/service/noise/service.py b/service/noise/service.py
+index 0e995d6..f51922b
+--- a/service/noise/service.py
++++ b/service/noise/service.py
+@@ -7,6 +7,7 @@ no web framework, so a FastAPI adapter (noise_server.py) and a future raw-socket
+ protocol can both drive it.
+ """
+ import hashlib
++import secrets
+ 
+ from . import crypto
+ from .models import (
+@@ -49,8 +50,11 @@ class NotAuthorizedError(NoiseError):
+ auth_cache: dict[str, UserPublic | GroupSecret] = {}
+ 
+ 
++_TOKEN_SECRET = secrets.token_hex(16)
++
++
+ def make_token(kind: str, subject_id: int) -> str:
+-    digest = hashlib.sha256(f"noise-token-{kind}-{subject_id}".encode()).hexdigest()[:16]
++    digest = hashlib.sha256(f"{_TOKEN_SECRET}-noise-token-{kind}-{subject_id}".encode()).hexdigest()[:16]
+     return f"{kind}:{subject_id}:{digest}"
+ 
+ 

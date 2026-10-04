@@ -1,0 +1,31 @@
+diff --git a/service/vegas/database.py b/service/vegas/database.py
+index df2d819..7efd9bc 100644
+--- a/service/vegas/database.py
++++ b/service/vegas/database.py
+@@ -11,7 +11,7 @@ from .config import (
+     RSA_Q_POOL,
+     RSA_SHARED_P,
+ )
+-from .util import now, short_id
++from .util import RNG, now, short_id
+ 
+ 
+ class Database:
+@@ -20,7 +20,6 @@ class Database:
+         self.users = {}
+         self.sessions = {}
+         self.slips = {}
+-        self.nonces = [38_771, 38_771, 90_113, 90_113, 500_009, 500_009]
+         self.rsa_index = 0
+         self.house_signing_key = HOUSE_SIGNING_KEY
+ 
+@@ -64,8 +63,7 @@ class Database:
+     def build_signature_event(self, slip_id, secret):
+         secret_key = self.house_signing_key
+         public_key = crypto.mod_pow(GROUP_G, secret_key, GROUP_P)
+-        nonce = self.nonces.pop(0) % GROUP_Q
+-        self.nonces.append(nonce)
++        nonce = RNG.randrange(1, GROUP_Q)
+         commitment = crypto.mod_pow(GROUP_G, nonce, GROUP_P)
+         message = f"prove:{slip_id[:8]}:{len(secret.encode())}"
+         challenge = crypto.auth_challenge(message, commitment)

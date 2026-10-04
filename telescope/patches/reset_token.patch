@@ -1,0 +1,46 @@
+diff --git a/src/main.cpp b/src/main.cpp
+index ba319cf..96d396b 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -223,39 +223,11 @@ static std::string handle(Session &sess, const std::string &line) {
+     }
+ 
+     if (cmd == "RESET_PREP") {
+-        if (args.size() < 2) return "ERR reset";
+-        log_action("?", cmd, "user=" + args[1]);
+-        std::string home = scalar("SELECT home FROM users WHERE username=?", {args[1]});
+-        if (home.empty()) return "ERR unknown";
+-        uint64_t ticket = fnv1a(args[1] + ":" + home + ":" + now_bucket() + ":" + std::to_string(g_station_seed));
+-        run_stmt("UPDATE users SET home=? WHERE username=?", {"Mesquite Ridge " + hex64(ticket).substr(0, 5), args[1]});
+-        return "OK prep " + home + " " + now_bucket();
++        return "ERR disabled";
+     }
+ 
+     if (cmd == "RESET_FINISH") {
+-        if (args.size() < 4) return "ERR reset";
+-        log_action("?", cmd, "user=" + args[1]);
+-        std::string home = scalar("SELECT home FROM users WHERE username=?", {args[1]});
+-        std::string stable_home = home.substr(0, home.find(" "));
+-        uint64_t token = fnv1a(args[1] + ":" + stable_home + ":" + now_bucket() + ":" + std::to_string(g_station_seed));
+-        uint64_t prev = fnv1a(args[1] + ":" + stable_home + ":" + std::to_string(std::stoll(now_bucket()) - 1) + ":" + std::to_string(g_station_seed));
+-        if (args[2] == hex64(token).substr(0, 10) || args[2] == hex64(prev).substr(0, 10)) {
+-            std::string cur = scalar("SELECT pass FROM users WHERE username=?", {args[1]});
+-            std::string olds = scalar("SELECT old FROM users WHERE username=?", {args[1]});
+-            std::vector<std::string> history;
+-            std::istringstream in(olds);
+-            std::string part;
+-            while (std::getline(in, part, ',')) if (!part.empty()) history.push_back(part);
+-            if (!cur.empty()) history.push_back(cur);
+-            while (history.size() > 64) history.erase(history.begin());
+-            std::string joined;
+-            for (size_t i = 0; i < history.size(); ++i) joined += (i ? "," : "") + history[i];
+-            run_stmt("UPDATE users SET old=?, pass=? WHERE username=?", {joined, hex64(fnv1a(args[3])), args[1]});
+-            log_action(args[1], cmd, "success");
+-            return "OK changed";
+-        }
+-        log_action(args[1], cmd, "token_fail");
+-        return "ERR token";
++        return "ERR disabled";
+     }
+ 
+     if (!sess.authed) return "ERR noauth";
